@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'services/api_service.dart';
 
 void main() {
@@ -7,88 +6,340 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: ChatPage());
+
+    return MaterialApp(
+
+      debugShowCheckedModeBanner: false,
+
+      theme: ThemeData.dark(),
+
+      home: ChatPage(),
+    );
   }
 }
 
+
+
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  State<ChatPage> createState() =>
+      _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
-  final TextEditingController controller = TextEditingController();
 
-  String resposta = '';
+
+class _ChatPageState
+    extends State<ChatPage> {
+
+  final TextEditingController controller =
+      TextEditingController();
+
+  final ScrollController scrollController =
+      ScrollController();
 
   bool carregando = false;
 
-  Future<void> enviarMensagem() async {
-    final mensagem = controller.text;
 
-    if (mensagem.isEmpty) return;
+  List<Map<String,String>>
+  mensagens = [];
+
+
+
+  Future<void> enviarMensagem() async {
+
+    String texto =
+        controller.text.trim();
+
+    if(texto.isEmpty) return;
+
+
 
     setState(() {
+
+      mensagens.add({
+
+        "autor":"usuario",
+
+        "texto":texto
+      });
+
       carregando = true;
     });
 
-    final respostaApi = await ApiService.enviarMensagem(mensagem);
+
+
+    controller.clear();
+
+    scrollFim();
+
+
+
+    final resposta =
+        await ApiService
+            .enviarMensagem(texto);
+
+
 
     setState(() {
-      resposta = respostaApi;
+
+      mensagens.add({
+
+        "autor":"bot",
+
+        "texto":resposta
+      });
+
       carregando = false;
     });
 
-    controller.clear();
+
+    scrollFim();
   }
 
+
+
+  void scrollFim(){
+
+    Future.delayed(
+        const Duration(milliseconds:200),
+
+            (){
+
+          scrollController.animateTo(
+
+            scrollController
+                .position
+                .maxScrollExtent,
+
+            duration:
+            const Duration(
+                milliseconds:300),
+
+            curve:
+            Curves.easeOut,
+          );
+        });
+  }
+
+
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context){
+
     return Scaffold(
-      appBar: AppBar(title: const Text('EduBot')),
 
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+      appBar: AppBar(
 
-          child: Column(
-            children: [
-              TextField(
-                controller: controller,
+        title:
+        const Text("EduBot"),
 
-                decoration: const InputDecoration(
-                  hintText: 'Digite sua pergunta',
-                  border: OutlineInputBorder(),
-                ),
-              ),
+        centerTitle:true,
+      ),
 
-              const SizedBox(height: 10),
 
-              SizedBox(
-                width: double.infinity,
 
-                child: ElevatedButton(
-                  onPressed: enviarMensagem,
+      body: Column(
 
-                  child: const Text('Enviar'),
-                ),
-              ),
+        children:[
 
-              const SizedBox(height: 20),
 
-              if (carregando) const CircularProgressIndicator(),
+          Expanded(
 
-              if (!carregando)
-                SelectableText(resposta, style: const TextStyle(fontSize: 12)),
-            ],
+            child:
+            ListView.builder(
+
+              controller:
+              scrollController,
+
+              itemCount:
+              mensagens.length,
+
+              itemBuilder:
+                  (context,index){
+
+                final mensagem =
+                mensagens[index];
+
+                bool usuario =
+
+                    mensagem["autor"]
+                    =="usuario";
+
+
+
+                return Align(
+
+                  alignment:
+
+                  usuario
+
+                      ? Alignment
+                      .centerRight
+
+                      : Alignment
+                      .centerLeft,
+
+
+                  child: Container(
+
+                    margin:
+                    const EdgeInsets
+                        .symmetric(
+
+                        horizontal:12,
+
+                        vertical:6),
+
+                    padding:
+                    const EdgeInsets
+                        .all(14),
+
+                    constraints:
+
+                    BoxConstraints(
+
+                      maxWidth:
+
+                      MediaQuery.of(
+                          context)
+
+                          .size
+
+                          .width
+                          *0.75,
+                    ),
+
+                    decoration:
+
+                    BoxDecoration(
+
+                      color:
+
+                      usuario
+
+                          ? Colors.blue
+
+                          : Colors
+                          .grey[850],
+
+                      borderRadius:
+
+                      BorderRadius
+                          .circular(16),
+                    ),
+
+
+                    child:
+
+                    SelectableText(
+
+                      mensagem["texto"]!,
+
+                      style:
+                      const TextStyle(
+
+                          fontSize:16),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
+
+
+
+          if(carregando)
+
+            const Padding(
+
+              padding:
+              EdgeInsets.all(8),
+
+              child:
+              CircularProgressIndicator(),
+            ),
+
+
+
+          Container(
+
+            padding:
+            const EdgeInsets
+                .all(12),
+
+            color:
+            Colors.black54,
+
+            child: Row(
+
+              children:[
+
+                Expanded(
+
+                  child:
+
+                  TextField(
+
+                    controller:
+                    controller,
+
+                    decoration:
+
+                    InputDecoration(
+
+                      hintText:
+                      "Pergunte algo...",
+
+                      filled:true,
+
+                      fillColor:
+                      Colors.grey[900],
+
+                      border:
+
+                      OutlineInputBorder(
+
+                        borderRadius:
+
+                        BorderRadius
+                            .circular(30),
+
+                        borderSide:
+                        BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+
+
+                const SizedBox(width:8),
+
+
+
+                CircleAvatar(
+
+                  child:
+
+                  IconButton(
+
+                    onPressed:
+                    enviarMensagem,
+
+                    icon:
+                    const Icon(
+                        Icons.send),
+                  ),
+                )
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
